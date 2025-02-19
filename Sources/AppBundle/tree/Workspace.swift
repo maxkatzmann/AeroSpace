@@ -91,12 +91,23 @@ class Workspace: TreeNode, NonLeafTreeNodeObject, Hashable, CustomStringConverti
     }
 
     var displayInfo: WorkspaceDisplayInfo {
+        // We check for "Neovide" specifically, since new instances of "Neovide" currently do not have a bundle
+        // identifier.
         let windowsWithBundleIdentifiers = self.allLeafWindowsRecursive.filter {
-            $0.asMacWindow().macApp.nsApp.bundleIdentifier != nil
+            ($0.asMacWindow().macApp.nsApp.bundleIdentifier != nil)
+                || ($0.title == "Neovide")
         }
 
         let bundleIdentifiers = windowsWithBundleIdentifiers.compactMap {
-            $0.asMacWindow().macApp.nsApp.bundleIdentifier
+            if let bundleIdentifier = $0.asMacWindow().macApp.nsApp.bundleIdentifier {
+                return bundleIdentifier
+            }
+
+            if $0.title == "Neovide" {
+                return "com.neovide.neovide"
+            }
+
+            return nil
         }
 
         var indexOfFocussed: Int? = nil
