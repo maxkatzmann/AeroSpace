@@ -22,6 +22,11 @@ final class MacWindow: Window, CustomStringConvertible {
         if let existing = allWindowsMap[id] {
             return existing
         } else {
+            // Delay new window detection if mouse is down
+            // It helps with apps that allow dragging their tabs out to create new windows
+            // https://github.com/nikitabobko/AeroSpace/issues/1001
+            if isLeftMouseButtonDown { return nil }
+
             let data = getBindingDataForNewWindow(
                 axWindow,
                 startup ? (axWindow.center?.monitorApproximation ?? mainMonitor).activeWorkspace : focus.workspace,
@@ -73,10 +78,10 @@ final class MacWindow: Window, CustomStringConvertible {
             AXObserverRemoveNotification(obs.obs, obs.ax, obs.notif)
         }
         axObservers = []
-        // todo the if is an approximation to filter out cases when window just closed itself (or was killed remotely)
-        //  we might want to track the time of the latest workspace switch to make the approximation more accurate
         let focus = focus
-        if let deadWindowWorkspace, deadWindowWorkspace == focus.workspace || deadWindowWorkspace == prevFocusedWorkspace {
+        if let deadWindowWorkspace, deadWindowWorkspace == focus.workspace ||
+            deadWindowWorkspace == prevFocusedWorkspace && prevFocusedWorkspaceDate.distance(to: .now) < 1
+        {
             switch parent.cases {
                 case .tilingContainer, .workspace, .macosHiddenAppsWindowsContainer, .macosFullscreenWindowsContainer:
                     let deadWindowFocus = deadWindowWorkspace.toLiveFocus()
@@ -217,6 +222,8 @@ func isWindow(_ axWindow: AXUIElement, _ app: MacApp) -> Bool {
         return false
     }
 
+    lazy var title = axWindow.get(Ax.titleAttr) ?? ""
+
     // Try to filter out incredibly weird popup like AXWindows without any buttons.
     // E.g.
     // - Sonoma (macOS 14) keyboard layout switch
@@ -232,7 +239,8 @@ func isWindow(_ axWindow: AXUIElement, _ app: MacApp) -> Bool {
         app.getFocusedAxWindow()?.containingWindowId() != axWindow.containingWindowId() &&
 
         subrole != kAXStandardWindowSubrole &&
-        (axWindow.get(Ax.titleAttr) ?? "").isEmpty
+        // Share window purple "pill" indicator has "Window" title https://github.com/nikitabobko/AeroSpace/issues/1101
+        (title.isEmpty || title == "Window") // Maybe it doesn't work in non-English locale
     {
         return false
     }
@@ -246,7 +254,10 @@ func isWindow(_ axWindow: AXUIElement, _ app: MacApp) -> Bool {
         app.id == "org.mozilla.firefox" && subrole == kAXUnknownSubrole
 }
 
-func shouldFloat(_ axWindow: AXUIElement, _ app: MacApp) -> Bool { // Note: a lot of windows don't have title on startup
+// This function is referenced in the guide
+func isDialogHeuristic(_ axWindow: AXUIElement, _ app: MacApp) -> Bool {
+    // Note: a lot of windows don't have title on startup. So please don't rely on the title
+
     // Don't tile:
     // - Chrome cmd+f window ("AXUnknown" value)
     // - login screen (Yes fuck, it's also a window from Apple's API perspective) ("AXUnknown" value)
@@ -259,6 +270,7 @@ func shouldFloat(_ axWindow: AXUIElement, _ app: MacApp) -> Bool { // Note: a lo
         return true
     }
     // Firefox: Picture in Picture window doesn't have minimize button.
+    // todo. bug: when firefox shows non-native fullscreen, minimize button disables for all other windows
     if app.id == "org.mozilla.firefox" && axWindow.get(Ax.minimizeButtonAttr)?.get(Ax.enabledAttr) != true {
         return true
     }
@@ -276,12 +288,11 @@ func shouldFloat(_ axWindow: AXUIElement, _ app: MacApp) -> Bool { // Note: a lo
     // - flameshot? https://github.com/nikitabobko/AeroSpace/issues/112
     // - Drata Agent https://github.com/nikitabobko/AeroSpace/issues/134
     if !isFullscreenable(axWindow) &&
-        app.id != "com.google.Chrome" && // "Drag out" a tab out of Chrome window
         app.id != "org.gimp.gimp-2.10" && // Gimp doesn't show fullscreen button
         app.id != "com.apple.ActivityMonitor" && // Activity Monitor doesn't show fullscreen button
 
         // Terminal apps and Emacs have an option to hide their title bars
-        app.id != "org.alacritty" &&
+        app.id != "org.alacritty" && // ~/.alacritty.toml: window.decorations = "Buttonless"
         app.id != "net.kovidgoyal.kitty" && // ~/.config/kitty/kitty.conf: hide_window_decorations titlebar-and-corners
         app.id != "com.mitchellh.ghostty" && // ~/.config/ghostty/config: window-decoration = false
         app.id != "com.github.wez.wezterm" &&
@@ -315,7 +326,7 @@ private func getBindingDataForNewWindow(_ axWindow: AXUIElement, _ workspace: Wo
     if !isWindow(axWindow, app) {
         return BindingData(parent: macosPopupWindowsContainer, adaptiveWeight: WEIGHT_AUTO, index: INDEX_BIND_LAST)
     }
-    if shouldFloat(axWindow, app) {
+    if isDialogHeuristic(axWindow, app) {
         return BindingData(parent: workspace, adaptiveWeight: WEIGHT_AUTO, index: INDEX_BIND_LAST)
     }
     return getBindingDataForNewTilingWindow(workspace)

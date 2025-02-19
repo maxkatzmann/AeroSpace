@@ -78,7 +78,7 @@ There are 7 channels:
     [RSS](https://github.com/nikitabobko/AeroSpace/discussions/categories/general.atom?discussions_q=sort%3Adate_created+category%3Ageneral).
 -   [#potential-bugs](https://github.com/nikitabobko/AeroSpace/discussions/categories/potential-bugs).
     [RSS](https://github.com/nikitabobko/AeroSpace/discussions/categories/potential-bugs.atom?discussions_q=category%3Apotential-bugs+sort%3Adate_created).
-    If you think that you encourage a bug, you can report it here.
+    If you think that you have encountered a bug, you can report it here.
 -   [#questions-and-answers](https://github.com/nikitabobko/AeroSpace/discussions/categories/questions-and-answers).
     [RSS](https://github.com/nikitabobko/AeroSpace/discussions/categories/questions-and-answers.atom?discussions_q=category%3Aquestions-and-answers+sort%3Adate_created).
     Everyone is welcome to ask questions.
@@ -114,6 +114,11 @@ A notes on how to setup the project, build it, how to run the tests, etc. can be
 - Play nicely with existing macOS features.
   If limitations are imposed then AeroSpace won't play nicely with existing macOS features
   (For example, AeroSpace doesn't acknowledge the existence of macOS Spaces, and it uses [emulation of its own workspaces](https://nikitabobko.github.io/AeroSpace/guide#emulation-of-virtual-workspaces))
+- Ricing.
+  AeroSpace provides only a very minimal support for ricing - gaps and a few callbacks for integrations with bars.
+  The current maintainer doesn't care about ricing.
+  Ricing issues are not a priority, and they are mostly ignored.
+  The ricing stance can change only with the appearance of more maintainers.
 
 ## Tip of the day
 
