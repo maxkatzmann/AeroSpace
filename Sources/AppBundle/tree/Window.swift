@@ -32,9 +32,9 @@ open class Window: TreeNode, Hashable {
 
     func getAxTopLeftCorner() async throws -> CGPoint? { die("Not implemented") }
     func getAxSize() async throws -> CGSize? { die("Not implemented") }
-    var title: String { get async throws { die("Not implemented") } }
-    var isMacosFullscreen: Bool { get async throws { false } }
-    var isMacosMinimized: Bool { get async throws { false } } // todo replace with enum MacOsWindowNativeState { normal, fullscreen, invisible }
+    @MainActor var title: String { get async throws { die("Not implemented") } }
+    @MainActor var isMacosFullscreen: Bool { get async throws { false } }
+    @MainActor var isMacosMinimized: Bool { get async throws { false } } // todo replace with enum MacOsWindowNativeState { normal, fullscreen, invisible }
     var isHiddenInCorner: Bool { die("Not implemented") }
     @MainActor
     func nativeFocus() { die("Not implemented") }
