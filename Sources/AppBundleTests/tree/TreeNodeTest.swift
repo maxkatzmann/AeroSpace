@@ -29,6 +29,25 @@ final class TreeNodeTest: XCTestCase {
         XCTAssertTrue(!workspace.isEffectivelyEmpty)
     }
 
+    func testBindWeightAuto_skipsTombstones() {
+        let root = Workspace.get(byName: name).rootTilingContainer
+        TestWindow.new(id: 1, parent: root, adaptiveWeight: 2)
+        TestWindow.new(id: 2, parent: root, adaptiveWeight: 10).lifeStatus = .invisible
+        TestWindow.new(id: 3, parent: root, adaptiveWeight: 4)
+        TilingContainer.newVTiles(parent: root, adaptiveWeight: 20).lifeStatus = .deadOrInvisible
+
+        let window = TestWindow.new(id: 4, parent: root, adaptiveWeight: WEIGHT_AUTO)
+        assertEquals(window.getWeight(root.orientation), 3) // (2 + 4) / 2
+    }
+
+    func testBindWeightAuto_onlyTombstoneSiblings() {
+        let root = Workspace.get(byName: name).rootTilingContainer
+        TestWindow.new(id: 1, parent: root, adaptiveWeight: 10).lifeStatus = .dead
+
+        let window = TestWindow.new(id: 2, parent: root, adaptiveWeight: WEIGHT_AUTO)
+        assertEquals(window.getWeight(root.orientation), 1)
+    }
+
     func testNormalizeContainers_dontRemoveRoot() {
         let workspace = Workspace.get(byName: name)
         weak let root = workspace.rootTilingContainer
@@ -57,6 +76,25 @@ final class TreeNodeTest: XCTestCase {
         assertEquals(
             .h_tiles([.window(0), .window(1)]),
             workspace.rootTilingContainer.layoutDescription,
+        )
+    }
+
+    func testNormalizeContainers_rootSingleContainerChild() {
+        config.enableNormalizationFlattenContainers = true
+        let workspace = Workspace.get(byName: name)
+        var window3: TestWindow!
+        workspace.rootTilingContainer.apply {
+            TilingContainer.newVTiles(parent: $0, adaptiveWeight: 1).apply {
+                TestWindow.new(id: 1, parent: $0)
+                TestWindow.new(id: 2, parent: $0)
+            }
+            window3 = TestWindow.new(id: 3, parent: $0)
+        }
+        window3.unbindFromParent()
+        workspace.normalizeContainers()
+        assertEquals(
+            workspace.rootTilingContainer.layoutDescription,
+            .v_tiles([.window(1), .window(2)]),
         )
     }
 
