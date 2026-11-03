@@ -1,4 +1,5 @@
 @testable import AppBundle
+import Common
 import XCTest
 
 final class WindowLevelCacheTest: XCTestCase {
@@ -7,7 +8,7 @@ final class WindowLevelCacheTest: XCTestCase {
         let finished = expectation(description: "both lookups completed")
         finished.expectedFulfillmentCount = 2
         let gate = AwaitableOneTimeBroadcastLatch()
-        let first = Task { @MainActor in
+        let first = Task.startUnstructured { @MainActor in
             _ = try? await getWindowLevel(forNativeId: UInt32.max, .cancellable, load: {
                 loading.fulfill()
                 try? await gate.await(.nonCancellable)
@@ -16,7 +17,7 @@ final class WindowLevelCacheTest: XCTestCase {
             finished.fulfill()
         }
         await fulfillment(of: [loading], timeout: 2)
-        let second = Task { @MainActor in
+        let second = Task.startUnstructured { @MainActor in
             _ = try? await getWindowLevel(forNativeId: UInt32.max - 1, .cancellable)
             finished.fulfill()
         }
