@@ -5,16 +5,17 @@ import Foundation
 @MainActor private var cache: [UInt32: MacOsWindowLevel] = [:]
 @MainActor private var wip: AwaitableOneTimeBroadcastLatch? = nil
 
-@MainActor func getWindowLevel(forNativeId windowId: UInt32, _ cm: CancellationMode) async throws -> MacOsWindowLevel? {
+@MainActor func getWindowLevel(forNativeId windowId: UInt32, _ cm: CancellationMode, load: @Sendable () async -> [UInt32: MacOsWindowLevel] = computeCache) async throws -> MacOsWindowLevel? {
     if let existing = cache[windowId] { return existing }
     if let wip {
         try await wip.await(cm)
         return cache[windowId]
     }
-    wip = AwaitableOneTimeBroadcastLatch()
-    cache = await computeCache()
+    let pending = AwaitableOneTimeBroadcastLatch()
+    wip = pending
+    cache = await load()
     wip = nil
-    await wip?.signalToAll()
+    await pending.signalToAll()
     return cache[windowId]
 }
 
