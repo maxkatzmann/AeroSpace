@@ -40,7 +40,7 @@ import SwiftUI
     private static func perform(_ action: SpaceStationAction) async -> SpaceStationActionResult {
         guard let token = RunSessionGuard.isServerEnabled, !serverArgs.isReadOnly else { return .unavailable }
         if action == .refreshState {
-            await runHeavyCompleteRefreshSession(.spaceStation, assumeCancellable: false)
+            await runHeavyCompleteRefreshSession(.spaceStation, assumeCancellable: true)
             return .success
         }
         guard let args = commandArguments(action), let command = parseCommand(args).cmdOrNil else { return .failure("Invalid action") }
