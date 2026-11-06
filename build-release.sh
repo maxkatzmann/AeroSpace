@@ -51,15 +51,18 @@ cd ./xcode
         AEROSPACE_BUILD_INFO_LDFLAGS="-sectcreate __TEXT __aero_build $build_info_file"
 cd -
 
-cp -r "xcode/.xcode-build/Build/Products/$xcode_configuration/AeroSpace.app" .release
+ditto "xcode/.xcode-build/Build/Products/$xcode_configuration/AeroSpace.app" .release/AeroSpace.app
 cp -r "$cli_bin_path/aerospace" .release
 
 # Binary reproducibility: strip non-portable rpaths
 # https://github.com/swiftlang/swift-package-manager/issues/10760
-xcrun objdump --macho --rpaths --no-leading-headers --arch all .release/aerospace | grep -vE '^(@|/usr/lib/swift$)' | sort -u |
-    while IFS= read -r rpath; do
-        install_name_tool -delete_rpath "$rpath" .release/aerospace
-    done
+cli_rpaths=$(xcrun objdump --macho --rpaths --no-leading-headers --arch all .release/aerospace)
+while IFS= read -r rpath; do
+    case "$rpath" in
+        ''|@*|/usr/lib/swift) continue ;;
+    esac
+    install_name_tool -delete_rpath "$rpath" .release/aerospace
+done <<< "$(sort -u <<< "$cli_rpaths")"
 
 ################
 ### SIGN CLI ###
@@ -82,7 +85,7 @@ cp -r ./legal ".release/AeroSpace-v$build_version/legal"
 cp -r .shell-completion ".release/AeroSpace-v$build_version/shell-completion"
 cd .release
     mkdir -p "AeroSpace-v$build_version/bin" && cp -r aerospace "AeroSpace-v$build_version/bin"
-    cp -r AeroSpace.app "AeroSpace-v$build_version"
+    ditto AeroSpace.app "AeroSpace-v$build_version/AeroSpace.app"
     zip -r "AeroSpace-v$build_version.zip" "AeroSpace-v$build_version"
 cd -
 

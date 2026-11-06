@@ -14,7 +14,17 @@ expected_layout=$(cat <<EOF
 .release/AeroSpace.app/Contents/Resources/AppIcon.icns
 .release/AeroSpace.app/Contents/Resources/Assets.car
 .release/AeroSpace.app/Contents/Frameworks
-.release/AeroSpace.app/Contents/Frameworks/libswiftCompatibilitySpan.dylib
+.release/AeroSpace.app/Contents/Frameworks/OpenMultitouchSupportXCF.framework
+.release/AeroSpace.app/Contents/Frameworks/OpenMultitouchSupportXCF.framework/Resources
+.release/AeroSpace.app/Contents/Frameworks/OpenMultitouchSupportXCF.framework/Versions
+.release/AeroSpace.app/Contents/Frameworks/OpenMultitouchSupportXCF.framework/Versions/A
+.release/AeroSpace.app/Contents/Frameworks/OpenMultitouchSupportXCF.framework/Versions/A/_CodeSignature
+.release/AeroSpace.app/Contents/Frameworks/OpenMultitouchSupportXCF.framework/Versions/A/_CodeSignature/CodeResources
+.release/AeroSpace.app/Contents/Frameworks/OpenMultitouchSupportXCF.framework/Versions/A/Resources
+.release/AeroSpace.app/Contents/Frameworks/OpenMultitouchSupportXCF.framework/Versions/A/Resources/Info.plist
+.release/AeroSpace.app/Contents/Frameworks/OpenMultitouchSupportXCF.framework/Versions/A/OpenMultitouchSupportXCF
+.release/AeroSpace.app/Contents/Frameworks/OpenMultitouchSupportXCF.framework/Versions/Current
+.release/AeroSpace.app/Contents/Frameworks/OpenMultitouchSupportXCF.framework/OpenMultitouchSupportXCF
 .release/AeroSpace.app/Contents/Info.plist
 .release/AeroSpace.app/Contents/PkgInfo
 EOF
@@ -29,7 +39,7 @@ check-equals() {
     fi
 }
 
-check-equals ".release/AeroSpace.app layout" "$expected_layout" "$(find .release/AeroSpace.app)"
+check-equals ".release/AeroSpace.app layout" "$(sort <<< "$expected_layout")" "$(find .release/AeroSpace.app | sort)"
 
 check-universal-binary() {
     if ! file "$1" | grep --fixed-string -q "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit executable x86_64] [arm64"; then
@@ -87,6 +97,7 @@ EOF
 check-rpaths .release/aerospace "$expected_cli_rpaths"
 
 expected_app_dylibs=$(cat <<EOF
+	@rpath/OpenMultitouchSupportXCF.framework/Versions/A/OpenMultitouchSupportXCF
 	/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation
 	/usr/lib/libobjc.A.dylib
 	/usr/lib/libSystem.B.dylib
@@ -97,10 +108,10 @@ expected_app_dylibs=$(cat <<EOF
 	/System/Library/Frameworks/CoreAudio.framework/Versions/A/CoreAudio
 	/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation
 	/System/Library/Frameworks/CoreGraphics.framework/Versions/A/CoreGraphics
+	/System/Library/Frameworks/Network.framework/Versions/A/Network
 	/System/Library/Frameworks/ServiceManagement.framework/Versions/A/ServiceManagement
 	/System/Library/Frameworks/SwiftUI.framework/Versions/A/SwiftUI
 	/usr/lib/libc++.1.dylib
-	@rpath/libswiftCompatibilitySpan.dylib
 EOF
 )
 check-dylibs .release/AeroSpace.app/Contents/MacOS/AeroSpace "$expected_app_dylibs"
@@ -110,6 +121,7 @@ expected_cli_dylibs=$(cat <<EOF
 	/usr/lib/libobjc.A.dylib
 	/usr/lib/libSystem.B.dylib
 	/System/Library/Frameworks/AppKit.framework/Versions/C/AppKit
+	/System/Library/Frameworks/Network.framework/Versions/A/Network
 	/usr/lib/libc++.1.dylib
 EOF
 )
@@ -123,3 +135,25 @@ codesign -v .release/aerospace
 
 check-contains-hash .release/AeroSpace.app/Contents/MacOS/AeroSpace
 check-contains-hash .release/aerospace
+
+framework=.release/AeroSpace.app/Contents/Frameworks/OpenMultitouchSupportXCF.framework
+expected_framework_dylibs=$(cat <<EOF
+	@rpath/OpenMultitouchSupportXCF.framework/Versions/A/OpenMultitouchSupportXCF
+	/System/Library/Frameworks/Cocoa.framework/Versions/A/Cocoa
+	/System/Library/Frameworks/Foundation.framework/Versions/C/Foundation
+	/System/Library/PrivateFrameworks/MultitouchSupport.framework/Versions/A/MultitouchSupport
+	/usr/lib/libobjc.A.dylib
+	/usr/lib/libSystem.B.dylib
+	/System/Library/Frameworks/AppKit.framework/Versions/C/AppKit
+	/System/Library/Frameworks/CoreFoundation.framework/Versions/A/CoreFoundation
+EOF
+)
+check-dylibs "$framework/Versions/A/OpenMultitouchSupportXCF" "$expected_framework_dylibs"
+check-equals "Touch framework architectures" 'x86_64 arm64' "$(lipo -archs "$framework/Versions/A/OpenMultitouchSupportXCF")"
+codesign --verify --strict "$framework"
+codesign --verify --deep --strict .release/AeroSpace.app
+for binary in .release/aerospace .release/AeroSpace.app/Contents/MacOS/AeroSpace; do
+    for arch in x86_64 arm64; do
+        check-equals "$binary ($arch) minimum OS" '27.0' "$(xcrun vtool -arch "$arch" -show-build "$binary" | awk '$1 == "minos" { print $2 }')"
+    done
+done

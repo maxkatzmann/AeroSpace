@@ -44,6 +44,8 @@ targets:
           PRODUCT_BUNDLE_IDENTIFIER: bobko.aerospace.debug
         Release:
           PRODUCT_NAME: AeroSpace
+          ARCHS: "arm64 x86_64"
+          ONLY_ACTIVE_ARCH: false
           PRODUCT_BUNDLE_IDENTIFIER: bobko.aerospace
           SWIFT_TREAT_WARNINGS_AS_ERRORS: YES
           GCC_TREAT_WARNINGS_AS_ERRORS: YES
