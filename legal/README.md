@@ -25,3 +25,8 @@ swift-collections is used for more advanced Swift collections.
 [ISSoundAdditions GitHub link](https://github.com/InerziaSoft/ISSoundAdditions).
 [ISSoundAdditions MIT license](./third-party-license/LICENSE-ISSoundAdditions.txt).
 ISSoundAdditions is used as a convenient API to change system volume.
+
+**OpenMultitouchSupport**
+[OpenMultitouchSupport GitHub link](https://github.com/Kyome22/OpenMultitouchSupport).
+[OpenMultitouchSupport license](./third-party-license/LICENSE-OpenMultitouchSupport.txt).
+OpenMultitouchSupport supplies SpaceStation's four-finger trackpad input.
