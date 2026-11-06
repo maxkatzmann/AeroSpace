@@ -1,5 +1,6 @@
 @testable import SpaceStationKit
 import XCTest
+import CoreGraphics
 
 @MainActor final class SpaceStationTests: XCTestCase {
     func controller(_ actions: @escaping @MainActor (SpaceStationAction) async -> SpaceStationActionResult = { _ in .success }) -> SpaceStation {
@@ -41,6 +42,20 @@ import XCTest
         c.setSleeping(false); await Task.yield(); await Task.yield()
         XCTAssertEqual(actions, [.refreshState])
         c.stop(); c.stop()
+    }
+    func testConsumedCloseDeliveryAndRetiredWorker() async {
+        var delivered = 0
+        let worker = InputTapWorker { _, _, close in if close { delivered += 1 } }
+        worker.capture.withLock { $0.close = true }
+        let event = CGEvent(keyboardEventSource: nil, virtualKey: 13, keyDown: true)!
+        XCTAssertNil(worker.handle(.keyDown, event))
+        await withCheckedContinuation { continuation in
+            DispatchQueue.main.async { continuation.resume() }
+        }
+        XCTAssertEqual(delivered, 1)
+        worker.stop()
+        XCTAssertNotNil(worker.handle(.keyDown, event))
+        XCTAssertEqual(delivered, 1)
     }
     func testInterpreterThresholdMomentumAndBoundary() {
         var s = ScrollInterpreter()

@@ -25,7 +25,7 @@ let package = Package(
         .package(url: "https://github.com/Kyome22/OpenMultitouchSupport", exact: "3.0.3"),
         .package(url: "https://github.com/InerziaSoft/ISSoundAdditions.git", exact: "2.0.1"),
         .package(url: "https://github.com/dduan/TOMLDecoder", exact: "0.4.5"),
-        .package(url: "https://github.com/apple/swift-collections.git", exact: "1.6.0", traits: ["UnstableHashedContainers"]),
+        .package(url: "https://github.com/apple/swift-collections.git", exact: "1.6.0"),
         .package(url: "https://github.com/soffes/HotKey.git", exact: "0.2.1"),
         .package(url: "https://github.com/swiftlang/swift-syntax.git", exact: "604.0.0"),
     ],

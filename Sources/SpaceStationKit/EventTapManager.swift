@@ -43,7 +43,7 @@ private func eventTapCallback(proxy _: CGEventTapProxy, type: CGEventType, event
 
 // Each worker owns one interpreter and run loop. Only capture and lifecycle state
 // cross threads, protected by their locks. Retired workers cannot deliver intents.
-private final class InputTapWorker: @unchecked Sendable {
+final class InputTapWorker: @unchecked Sendable {
     let capture = OSAllocatedUnfairLock(initialState: (scroll: false, close: false))
     private let lifecycle = NSLock()
     private var cancelled = false
