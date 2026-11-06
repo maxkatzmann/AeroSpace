@@ -26,6 +26,7 @@ func initTerminationHandler() {
 private struct AppServerTerminationHandler: TerminationHandler {
     @MainActor
     func beforeTermination() {
+        SpaceStationBridge.shared.stop()
         // Make all windows fullscreen before Quit
         for window in MacWindow.allWindowsMap.values {
             // makeAllWindowsVisibleAndRestoreSize may be invoked when something went wrong (e.g. some windows are unbound)
@@ -116,12 +117,6 @@ extension CGFloat {
     }
 }
 
-extension CGPoint: @retroactive Hashable { // todo migrate to self written Point
-    public func hash(into hasher: inout Hasher) {
-        hasher.combine(x)
-        hasher.combine(y)
-    }
-}
 
 #if DEBUG
     let isDebug = true

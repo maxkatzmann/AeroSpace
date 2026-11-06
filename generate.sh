@@ -11,7 +11,7 @@ SWIFT_TOOLCHAIN_VERSION=6.4.2
 SWIFT_PACKAGE_MANAGER_MANIFEST_FORMAT=6.2
 # Langauge mode. Only the major version counts
 SWIFT_LANGAUGE_VERSION=6
-MACOS_MIN_DEPLOYMENT_TARGET=13
+MACOS_MIN_DEPLOYMENT_TARGET=27
 
 export XCODEGEN_DEPLOYMENT_TARGET=$MACOS_MIN_DEPLOYMENT_TARGET
 export XCODEGEN_SWIFT_VERSION=$SWIFT_LANGAUGE_VERSION
@@ -29,7 +29,7 @@ done
 echo $SWIFT_TOOLCHAIN_VERSION > ./.swift-version
 
 sed -i '' "1s|.*|// swift-tools-version: ${SWIFT_PACKAGE_MANAGER_MANIFEST_FORMAT}|" Package.swift
-sed -i '' "/#MACOS_MIN_DEPLOYMENT_TARGET/ s|platforms: .*|platforms: [.macOS(.v${MACOS_MIN_DEPLOYMENT_TARGET})], // #MACOS_MIN_DEPLOYMENT_TARGET|" Package.swift
+sed -i '' "/#MACOS_MIN_DEPLOYMENT_TARGET/ s|platforms: .*|platforms: [.macOS(\"${MACOS_MIN_DEPLOYMENT_TARGET}.0\")], // #MACOS_MIN_DEPLOYMENT_TARGET|" Package.swift
 
 if test $generate_cmd_help = 1; then
     # It takes 300ms for the script to complete

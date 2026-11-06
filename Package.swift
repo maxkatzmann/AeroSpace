@@ -12,7 +12,7 @@ let package = Package(
     name: "AeroSpacePackage",
     // Runtime support for parameterized protocol types is only available in macOS 13.0.0 or newer
     // And it specifies deploymentTarget for CLI
-    platforms: [.macOS(.v13)], // #MACOS_MIN_DEPLOYMENT_TARGET
+    platforms: [.macOS("27.0")], // #MACOS_MIN_DEPLOYMENT_TARGET
     // Products define the executables and libraries a package produces, making them visible to other packages.
     products: [
         .executable(name: "aerospace", targets: ["Cli"]),
@@ -22,6 +22,7 @@ let package = Package(
         .library(name: "AppBundle", targets: ["AppBundle"]),
     ],
     dependencies: [
+        .package(url: "https://github.com/Kyome22/OpenMultitouchSupport", exact: "3.0.3"),
         .package(url: "https://github.com/InerziaSoft/ISSoundAdditions.git", exact: "2.0.1"),
         .package(url: "https://github.com/dduan/TOMLDecoder", exact: "0.4.5"),
         .package(url: "https://github.com/apple/swift-collections.git", exact: "1.6.0", traits: ["UnstableHashedContainers"]),
@@ -55,6 +56,7 @@ let package = Package(
         .target(
             name: "AppBundle",
             dependencies: [
+                .target(name: "SpaceStationKit"),
                 .product(name: "BasicContainers", package: "swift-collections"),
                 .product(name: "OrderedCollections", package: "swift-collections"),
                 .product(name: "HotKey", package: "HotKey"),
@@ -82,12 +84,15 @@ let package = Package(
             ],
             swiftSettings: swiftSettings,
         ),
+        .target(name: "SpaceStationKit", dependencies: [.product(name: "OpenMultitouchSupport", package: "OpenMultitouchSupport")]),
+        .testTarget(name: "SpaceStationKitTests", dependencies: ["SpaceStationKit"], path: "Tests/SpaceStationKitTests"),
         .testTarget(
             name: "AppBundleTests",
             dependencies: [
                 .target(name: "AppBundle"),
                 .target(name: "Macros"),
             ],
+            path: "Sources/AppBundleTests",
             swiftSettings: swiftSettings,
         ),
     ],

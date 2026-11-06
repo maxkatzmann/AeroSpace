@@ -25,3 +25,10 @@ Use Bash 5+; upstream resolves it through `#!/usr/bin/env bash`. Install and ini
 ## Style, Tests, and Commits
 
 Use four-space Swift indentation, PascalCase types, camelCase members, and repository formatting rules. Add focused XCTest coverage for new behavior, but avoid tests or refactors for this fork-only one-line ordering patch. Use atomic imperative commits, such as `Disable sorting in ListWindowsCommand`; keep unrelated generated or local build changes out of upstream-sync commits.
+
+## Integrated SpaceStation
+
+This fork requires macOS 27. Keep SpaceStationKit independent of AppBundle and
+Common; translate model snapshots and actions only in SpaceStationBridge. Preserve
+its narrow lifecycle, refresh-completion, and menu hooks during upstream merges.
+See docs/fork/spacestation.md for the contract and migration/acceptance checklist.

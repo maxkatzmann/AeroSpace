@@ -1,5 +1,5 @@
 {
-  "originHash" : "5eb2dc48f7d249e12005a045d38338c9e5d399b2b6595adccda89c20fbe85fbe",
+  "originHash" : "729e5b0819950e968363c934d2aa0c13404e95e095e7be40d5573c0d956fe2cf",
   "pins" : [
     {
       "identity" : "hotkey",
@@ -17,6 +17,15 @@
       "state" : {
         "revision" : "4b555f0354e6c280917bae8a598a258efe87ab98",
         "version" : "2.0.1"
+      }
+    },
+    {
+      "identity" : "openmultitouchsupport",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/Kyome22/OpenMultitouchSupport",
+      "state" : {
+        "revision" : "d7ec2276bea98711530dc610eb05563e9e1ce342",
+        "version" : "3.0.3"
       }
     },
     {
