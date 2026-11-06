@@ -5,7 +5,9 @@ import CoreGraphics
 @MainActor final class SpaceStationTests: XCTestCase {
     func controller(_ actions: @escaping @MainActor (SpaceStationAction) async -> SpaceStationActionResult = { _ in .success }) -> SpaceStation {
         let defaults = UserDefaults(suiteName: UUID().uuidString)!
-        return SpaceStation(defaults: defaults, liveInput: false, perform: actions)
+        let c = SpaceStation(defaults: defaults, liveInput: false, perform: actions)
+        c.displayRecovery.displays = { [] }
+        return c
     }
     func state(_ ids: [UInt64], workspace: String = "1", focus: UInt64? = nil) -> SpaceStationSnapshot {
         SpaceStationSnapshot(workspaces: [WorkspaceSnapshot(name: workspace, windows: ids.map { WindowSnapshot(id: $0, pid: 0, bundleIdentifier: "same.app") })], focusedWorkspace: workspace, focusedWindow: focus, available: true, mode: nil, frame: .zero)
@@ -94,7 +96,9 @@ import CoreGraphics
         await Task.yield(); XCTAssertTrue(actions.isEmpty)
         c.isEnabled = true; c.setSleeping(true); c.closeFocused()
         await Task.yield(); XCTAssertTrue(actions.isEmpty)
-        c.setSleeping(false); await Task.yield(); await Task.yield()
+        c.displayRecovery.displays = { [DisplayGeometry(id: 1, frame: CGRect(x: 0, y: 0, width: 100, height: 100), visibleFrame: CGRect(x: 0, y: 0, width: 100, height: 90))] }
+        c.setSleeping(false)
+        for _ in 0 ..< 10 { await Task.yield() }
         XCTAssertEqual(actions, [.refreshState])
         c.stop(); c.stop()
     }

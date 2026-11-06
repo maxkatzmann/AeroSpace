@@ -40,8 +40,12 @@ import SwiftUI
     private static func perform(_ action: SpaceStationAction) async -> SpaceStationActionResult {
         guard let token = RunSessionGuard.isServerEnabled, !serverArgs.isReadOnly else { return .unavailable }
         if action == .refreshState {
-            await runHeavyCompleteRefreshSession(.spaceStation, assumeCancellable: true)
-            return .success
+            guard TrayMenuModel.shared.axPermissionStatus == .granted, !Task.isCancelled else { return .unavailable }
+            let infos = globalUnsortedMonitorInfos
+            guard !infos.isEmpty, infos.allSatisfy({ $0.width > 0 && $0.height > 0 && $0.visibleRect.width > 0 && $0.visibleRect.height > 0 }) else { return .unavailable }
+            gcMonitors(force: true, monitorInfos: infos)
+            let completed = await runHeavyCompleteRefreshSession(.spaceStation, assumeCancellable: true)
+            return completed && !Task.isCancelled ? .success : .unavailable
         }
         guard let args = commandArguments(action), let command = parseCommand(args).cmdOrNil else { return .failure("Invalid action") }
         do {

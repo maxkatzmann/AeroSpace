@@ -44,6 +44,13 @@ public final class SpaceStation: ObservableObject {
     private let defaults: UserDefaults
     private let handler: @MainActor (SpaceStationAction) async -> SpaceStationActionResult
     private let liveInput: Bool
+    lazy var displayRecovery = DisplayRecovery(perform: { [weak self] in
+        guard let self else { return .unavailable }
+        return await self.handler(.refreshState)
+    }, recovered: { [weak self] in
+        self?.awaitingWakeSnapshot = false
+        self?.reconcileInput()
+    })
     private var started = false
     private var sleeping = false
     private var awaitingWakeSnapshot = false
@@ -84,23 +91,25 @@ public final class SpaceStation: ObservableObject {
                 })
             }
             observers.append(NotificationCenter.default.addObserver(forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main) { [weak self] _ in
-                Task.startUnstructured { @MainActor in self?.submit(.refreshState) }
+                Task.startUnstructured { @MainActor in self?.displayRecovery.check() }
             })
         }
+        displayRecovery.start()
         reconcileInput()
     }
     public func stop() {
-        started = false; resetInput()
+        started = false; sleeping = false; awaitingWakeSnapshot = false
+        displayRecovery.stop(); resetInput()
         for observer in observers { NSWorkspace.shared.notificationCenter.removeObserver(observer); NotificationCenter.default.removeObserver(observer) }
         observers = []
     }
     func setSleeping(_ value: Bool) {
+        guard sleeping != value else { displayRecovery.check(); return }
         sleeping = value; resetInput()
-        awaitingWakeSnapshot = !value
-        if !value { submit(.refreshState) }
+        awaitingWakeSnapshot = true
+        displayRecovery.setSleeping(value)
     }
     public func update(snapshot: SpaceStationSnapshot) {
-        awaitingWakeSnapshot = false
         if self.snapshot != snapshot {
             self.snapshot = snapshot
             spaces = snapshot.workspaces.map { ws in
@@ -112,6 +121,7 @@ public final class SpaceStation: ObservableObject {
             remembered = remembered.filter { name, id in spaces.contains { $0.name == name && $0.windows.contains { $0.windowId == id } } }
             updateSpacesRepresentation()
         }
+        displayRecovery.update(available: snapshot.available)
         reconcileInput()
         if shouldDisplay { presentOverlay() }
     }
@@ -148,7 +158,8 @@ public final class SpaceStation: ObservableObject {
         }
     }
     func submit(_ action: SpaceStationAction) {
-        guard started, isPresenting, !sleeping, !awaitingWakeSnapshot || action == .refreshState else { return }
+        if action == .refreshState { if started { displayRecovery.request() }; return }
+        guard started, isPresenting, !sleeping, !awaitingWakeSnapshot else { return }
         pending = action
         guard navigation == nil else { return }
         let token = generation

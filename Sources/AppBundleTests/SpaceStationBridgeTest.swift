@@ -1,4 +1,5 @@
 @testable import AppBundle
+import AppKit
 import Common
 import SpaceStationKit
 import XCTest
@@ -31,5 +32,44 @@ import XCTest
         XCTAssertEqual(SpaceStationBridge.makeSnapshot().workspaces.map(\.name), ["2", "10"])
         XCTAssertTrue(Workspace.get(byName: "3").focusWorkspace())
         XCTAssertEqual(SpaceStationBridge.makeSnapshot().workspaces.map(\.name), ["2", "3", "10"])
+    }
+}
+
+private struct ResizedMonitorInfo: MonitorInfo {
+    let monitorAppKitNsScreenScreensId = 1
+    let name = "Replacement display"
+    let rect = Rect(topLeftX: 0, topLeftY: 0, width: 1440, height: 900)
+    let visibleRect = Rect(topLeftX: 0, topLeftY: 25, width: 1440, height: 850)
+    let isMain = true
+    var width: CGFloat { rect.width }
+    var height: CGFloat { rect.height }
+}
+
+extension SpaceStationBridgeTest {
+    func testForcedMonitorRefreshPreservesTreeAndUpdatesLayout() async throws {
+        defer { gcMonitors(force: true) }
+        let workspace = globalFocus.workspace
+        let root = workspace.rootTilingContainer
+        let first = TestWindow.new(id: 1, parent: root)
+        TestWindow.new(id: 2, parent: root)
+        XCTAssertTrue(first.focusWindow())
+        let parent = workspace.parent
+        try await workspace.layoutWorkspace()
+        let oldWidth = workspace.lastAppliedLayoutPhysicalRect?.width
+        let replacement = ResizedMonitorInfo()
+        gcMonitors(monitorInfos: [replacement])
+        XCTAssertEqual(workspace.lastAppliedLayoutPhysicalRect?.width, oldWidth)
+        gcMonitors(force: true, monitorInfos: [replacement])
+        XCTAssertTrue(workspace.parent === parent)
+        XCTAssertTrue(workspace.rootTilingContainer === root)
+        XCTAssertEqual(root.allLeafWindowsRecursive.map(\.windowId), [1, 2])
+        XCTAssertEqual(workspace.workspaceMonitorInfo.rect.width, 1440)
+        XCTAssertEqual(workspace.workspaceMonitorInfo.visibleRect.height, 850)
+        try await workspace.layoutWorkspace()
+        XCTAssertNotEqual(workspace.lastAppliedLayoutPhysicalRect?.width, oldWidth)
+        XCTAssertEqual(workspace.lastAppliedLayoutPhysicalRect?.width, replacement.visibleRectPaddedByOuterGaps.width)
+        XCTAssertTrue(globalFocus.windowOrNil === first)
+        gcMonitors(force: true, monitorInfos: [])
+        XCTAssertEqual(workspace.workspaceMonitorInfo.rect.width, 1440)
     }
 }

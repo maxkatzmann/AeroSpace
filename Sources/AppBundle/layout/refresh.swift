@@ -21,15 +21,16 @@ func scheduleCancellableCompleteRefreshSession(
 }
 
 @MainActor
+@discardableResult
 func runHeavyCompleteRefreshSession(
     _ event: RefreshSessionEvent,
     assumeCancellable: Bool,
     layoutWorkspaces shouldLayoutWorkspaces: Bool = true,
     optimisticallyPreLayoutWorkspaces: Bool = false,
-) async {
+) async -> Bool {
     let state = signposter.beginInterval(#function, "event: \(event) axTaskLocalAppThreadToken: \(axTaskLocalAppThreadToken?.idForDebug)")
     defer { signposter.endInterval(#function, state) }
-    if !TrayMenuModel.shared.isEnabled { return }
+    if !TrayMenuModel.shared.isEnabled { return false }
     let res = await Result {
         try await $refreshSessionEvent.withValue(event) {
             let nativeFocused = try await getNativeFocusedWindow(.cancellable)
@@ -50,8 +51,8 @@ func runHeavyCompleteRefreshSession(
         }
     }
     switch res {
-        case .success(()): break
-        case .failure(let err as CancellationError): check(assumeCancellable, "Non cancellable refresh session was canceled: \(err) (\(type(of: err)))")
+        case .success(()): return true
+        case .failure(let err as CancellationError): check(assumeCancellable, "Non cancellable refresh session was canceled: \(err) (\(type(of: err)))"); return false
         case .failure(let err): die("Illegal error: \(err)")
     }
 }

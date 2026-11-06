@@ -23,8 +23,8 @@ final class Monitor: TreeNode, NonLeafTreeNodeObject {
     @MainActor static var all: [Monitor] { Array(pointToMonitor.values) }
 }
 
-@MainActor private func rearrangeMonitors() {
-    var newMonitorPoints = globalUnsortedMonitorInfos.grouped(by: { $0.rect.topLeftCorner }).mapValues { $0.singleOrNil().orDie() }
+@MainActor private func rearrangeMonitors(_ infos: [MonitorInfo] = globalUnsortedMonitorInfos) {
+    var newMonitorPoints = infos.grouped(by: { $0.rect.topLeftCorner }).mapValues { $0.singleOrNil().orDie() }
 
     var oldPointToMonitor = pointToMonitor
     pointToMonitor = [:]
@@ -112,8 +112,10 @@ extension MonitorInfo {
     }
 }
 
-@MainActor func gcMonitors() {
-    if pointToMonitor.count != globalUnsortedMonitorInfos.count {
-        rearrangeMonitors()
+@MainActor func gcMonitors(force: Bool = false, monitorInfos: [MonitorInfo]? = nil) {
+    let infos = monitorInfos ?? globalUnsortedMonitorInfos
+    guard !infos.isEmpty else { return }
+    if force || pointToMonitor.count != infos.count {
+        rearrangeMonitors(infos)
     }
 }

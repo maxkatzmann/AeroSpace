@@ -49,3 +49,22 @@ pin-checked helper disables swift-collections 1.6.0's legacy Swift 6.0 manifest
 in that ignored checkout, allowing Xcode to read the trait declarations in its
 Swift 6.2 manifest. Keep the required UnstableHashedContainers trait; remove the
 workaround when the dependency fixes its versioned manifest selection.
+
+## Display transition recovery
+
+SpaceStation tracks display IDs and full/usable frames in screen order, including
+when its interface is disabled. Startup, display changes, wake, and host snapshot
+publications compare geometry. Recovery forces monitor-cache reconciliation before
+an ordinary heavy refresh, covering single-display replacements at the same origin.
+It retains pending work through sleep, cancellation, and host unavailability;
+empty/invalid configurations wait for the next event or host publication. Recovery
+has its own task and revision, separate from navigation and input resets. Only a
+completed refresh of the current configuration releases the wake input gate.
+There is no unlock notification, polling, or settling timer: existing post-unlock
+Accessibility/application refreshes rediscover windows and provide a fallback check.
+
+Upstream merges must also preserve forced monitor reconciliation and the heavy
+refresh completion result. Acceptance includes locked docking in both directions,
+repeated sleep/wake and multiple displays, with the SpaceStation toggle both on
+and off. Tiled windows must fit the new usable bounds while workspace membership,
+window order, focus, and input remain intact; floating sizing follows AeroSpace.
