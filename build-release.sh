@@ -35,6 +35,8 @@ cli_bin_path="$(swift "${swift_build_cli[@]}" --show-bin-path)"
 
 rm -rf .release && mkdir .release
 
+./script/prepare-xcode-dependencies.sh
+
 cd ./xcode
     xcode_configuration="Release"
     xcodebuild -version
@@ -43,6 +45,7 @@ cd ./xcode
         -destination "generic/platform=macOS" \
         -configuration "$xcode_configuration" \
         -derivedDataPath .xcode-build \
+        -clonedSourcePackagesDirPath "$PWD/../.build" \
         MARKETING_VERSION="$build_version" \
         AEROSPACE_CODE_SIGN_IDENTITY="$codesign_identity" \
         AEROSPACE_BUILD_INFO_LDFLAGS="-sectcreate __TEXT __aero_build $build_info_file"

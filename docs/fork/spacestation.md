@@ -43,3 +43,9 @@ release and verify order and focus, the overlay, physical gestures, multiple
 monitors, and repeated sleep/wake cycles. Automated tests cannot establish input
 feel or wake recovery. Keep the standalone repository and binaries for rollback;
 restore the old pair, callback, and login item together if necessary.
+
+The release builder shares SwiftPM's resolved checkout directory with Xcode. A
+pin-checked helper disables swift-collections 1.6.0's legacy Swift 6.0 manifest
+in that ignored checkout, allowing Xcode to read the trait declarations in its
+Swift 6.2 manifest. Keep the required UnstableHashedContainers trait; remove the
+workaround when the dependency fixes its versioned manifest selection.
