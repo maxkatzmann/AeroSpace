@@ -46,6 +46,8 @@ cd ./xcode
         -configuration "$xcode_configuration" \
         -derivedDataPath .xcode-build \
         -clonedSourcePackagesDirPath "$PWD/../.build" \
+        ARCHS="arm64 x86_64" \
+        ONLY_ACTIVE_ARCH=NO \
         MARKETING_VERSION="$build_version" \
         AEROSPACE_CODE_SIGN_IDENTITY="$codesign_identity" \
         AEROSPACE_BUILD_INFO_LDFLAGS="-sectcreate __TEXT __aero_build $build_info_file"
