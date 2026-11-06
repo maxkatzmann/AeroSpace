@@ -12,6 +12,7 @@ public func menuBar(viewModel: TrayMenuModel) -> some Scene { // todo should it 
             .keyboardShortcut("C", modifiers: .command)
         Divider()
 
+        IntegratedSpaceStationToggle()
         if viewModel.axPermissionStatus == .granted {
             if let token: RunSessionGuard = .isServerEnabled, viewModel.lastReloadConfigContainedWarnings {
                 Button {
@@ -26,19 +27,9 @@ public func menuBar(viewModel: TrayMenuModel) -> some Scene { // todo should it 
                 }
                 Divider()
             }
-            if let token: RunSessionGuard = .isServerEnabled {
+            if RunSessionGuard.isServerEnabled != nil {
                 Text("Workspaces:")
-                ForEach(viewModel.workspaces, id: \.name) { workspace in
-                    Button {
-                        Task.startUnstructured {
-                            try await runLightSession(.menuBarButton, token) { _ = Workspace.get(byName: workspace.name).focusWorkspace() }
-                        }
-                    } label: {
-                        Toggle(isOn: .constant(workspace.isFocused)) {
-                            Text(workspace.name + workspace.suffix).font(.system(.body, design: .monospaced))
-                        }
-                    }
-                }
+                IntegratedSpaceStationMenu()
                 Divider()
             }
             Button {
@@ -74,7 +65,7 @@ public func menuBar(viewModel: TrayMenuModel) -> some Scene { // todo should it 
     } label: {
         switch (viewModel.axPermissionStatus, viewModel.isEnabled) {
             case (.granted, true):
-                MenuBarLabel().environmentObject(viewModel)
+                IntegratedSpaceStationLabel()
             case (.granted, false):
                 Image(systemName: "pause.circle.fill")
                     .resizable()

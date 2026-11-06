@@ -46,6 +46,7 @@ func runHeavyCompleteRefreshSession(
             SecureInputPanel.shared.refresh()
             try await normalizeLayoutReason()
             if shouldLayoutWorkspaces { try await layoutWorkspaces() }
+            SpaceStationBridge.shared.publish()
         }
     }
     switch res {
@@ -84,6 +85,7 @@ func runLightSession<T>(
             focusAfter?.nativeFocus() // syncFocusToMacOs
         }
         if !event.isFocusFollowsMouse { scheduleCancellableCompleteRefreshSession(event) }
+        SpaceStationBridge.shared.publish()
         return result
     }
 }
