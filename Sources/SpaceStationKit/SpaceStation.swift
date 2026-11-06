@@ -184,7 +184,7 @@ public final class SpaceStation: ObservableObject {
         let slots = max(1, 2 * (spaces.lazy.map { $0.windows.count }.max() ?? 0) - 1)
         var result = Space.blanks(count: count - 1 - selectedSpace, windowCount: slots)
         for space in spaces {
-            let index = remembered[space.name].flatMap { id in space.windows.firstIndex { $0.windowId == id } }
+            let index = remembered[space.name].flatMap { id in space.windows.firstIndex { $0.windowId == id } } ?? space.windows.indices.first
             var windows = Window.blanks(count: index.map { max(0, slots / 2 - $0) } ?? 0) + space.windows
             windows += Window.blanks(count: max(space.windows.isEmpty ? 1 : 0, slots - windows.count))
             result.append(Space(name: space.name, windows: windows, isFocused: space.isFocused))

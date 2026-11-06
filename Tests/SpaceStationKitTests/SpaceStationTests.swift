@@ -20,6 +20,61 @@ import CoreGraphics
         XCTAssertEqual(c.spaces.count, 1); XCTAssertEqual(c.nextWorkspace, "10")
         XCTAssertFalse(c.spacesRepresentation.isEmpty)
     }
+    func presentationState(_ ids: [UInt64], focusedWorkspace: String = "1", focus: UInt64? = 2) -> SpaceStationSnapshot {
+        SpaceStationSnapshot(workspaces: state([1, 2, 3, 4]).workspaces + state(ids, workspace: "4").workspaces,
+                             focusedWorkspace: focusedWorkspace, focusedWindow: focus, available: true, mode: nil, frame: .zero)
+    }
+    func testUnvisitedSingleWindowWorkspaceCentersFirstWindow() throws {
+        let c = controller(); c.update(snapshot: presentationState([5]))
+        let row = try XCTUnwrap(c.spacesRepresentation.first { $0.name == "4" })
+        XCTAssertEqual(row.windows.count, 7)
+        XCTAssertEqual(row.windows[3].windowId, 5)
+        XCTAssertTrue(row.windows.prefix(3).allSatisfy(\.isBlank))
+        XCTAssertTrue(row.windows.suffix(3).allSatisfy(\.isBlank))
+    }
+    func testUnvisitedMultipleWindowWorkspaceCentersFirstWindowWithoutRememberingIt() throws {
+        let c = controller(); c.update(snapshot: presentationState([5, 6]))
+        let row = try XCTUnwrap(c.spacesRepresentation.first { $0.name == "4" })
+        XCTAssertEqual(row.windows.count, 7)
+        XCTAssertEqual(row.windows[3].windowId, 5)
+        XCTAssertEqual(row.windows.compactMap(\.windowId), [5, 6])
+
+        c.update(snapshot: presentationState([6, 5]))
+        let reordered = try XCTUnwrap(c.spacesRepresentation.first { $0.name == "4" })
+        XCTAssertEqual(reordered.windows[3].windowId, 6)
+        XCTAssertEqual(reordered.windows.compactMap(\.windowId), [6, 5])
+    }
+    func testRememberedWindowStaysCenteredAfterSwitchingWorkspace() throws {
+        let c = controller()
+        c.update(snapshot: presentationState([5, 6], focusedWorkspace: "4", focus: 6))
+        c.update(snapshot: presentationState([5, 6]))
+        let row = try XCTUnwrap(c.spacesRepresentation.first { $0.name == "4" })
+        XCTAssertEqual(row.windows.count, 7)
+        XCTAssertEqual(row.windows[3].windowId, 6)
+        XCTAssertEqual(row.windows.compactMap(\.windowId), [5, 6])
+    }
+    func testRemovedRememberedWindowFallsBackToFirstWindow() throws {
+        let c = controller()
+        c.update(snapshot: presentationState([5, 6], focusedWorkspace: "4", focus: 6))
+        c.update(snapshot: presentationState([5, 6]))
+        c.update(snapshot: presentationState([5]))
+        let row = try XCTUnwrap(c.spacesRepresentation.first { $0.name == "4" })
+        XCTAssertEqual(row.windows.count, 7)
+        XCTAssertEqual(row.windows[3].windowId, 5)
+        XCTAssertEqual(row.windows.compactMap(\.windowId), [5])
+    }
+    func testEmptyWorkspaceKeepsBlankSlots() throws {
+        let c = controller()
+        c.update(snapshot: presentationState([], focusedWorkspace: "4", focus: nil))
+        let row = try XCTUnwrap(c.spacesRepresentation.first { $0.name == "4" })
+        XCTAssertEqual(row.windows.count, 7)
+        XCTAssertTrue(row.windows.allSatisfy(\.isBlank))
+
+        c.update(snapshot: state([]))
+        let onlyRow = try XCTUnwrap(c.spacesRepresentation.first { $0.name == "1" })
+        XCTAssertEqual(onlyRow.windows.count, 1)
+        XCTAssertTrue(onlyRow.windows.allSatisfy(\.isBlank))
+    }
     func testScrollBoundariesAndClose() async {
         var actions: [SpaceStationAction] = []
         let c = controller { actions.append($0); return .success }
